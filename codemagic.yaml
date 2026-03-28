@@ -8,19 +8,25 @@ workflows:
     scripts:
       - name: M4 Display Patch
         script: |
-          # Apply 1.432f ratio for iPad Pro M4 screen
-          find ./src -name "GSRenderer.cpp" -exec sed -i '' 's/1.333f/1.432f/g' {} +
+          # تطبيق نسبة 1.432f لشاشة iPad Pro M4
+          find . -name "GSRenderer.cpp" -exec sed -i '' 's/1.333f/1.432f/g' {} +
       - name: Build Emulator
         script: |
-          # Find the main project while ignoring 3rdparty libraries
+          # البحث عن ملف المشروع مع استبعاد المكتبات الخارجية
           PROJ=$(find . -name "*.xcodeproj" -not -path "*/3rdparty/*" | head -n 1)
-          echo "Building main project: $PROJ"
+          if [ -z "$PROJ" ]; then echo "Error: Project file not found!"; exit 1; fi
+          echo "Building: $PROJ"
+          
+          # استخراج اسم الـ Scheme تلقائياً
+          SCHEME=$(xcodebuild -project "$PROJ" -list | sed -n '/Schemes:/,$p' | sed -n '2p' | tr -d ' ')
+          echo "Detected Scheme: $SCHEME"
+          
           xcodebuild build \
             -project "$PROJ" \
-            -scheme "Play" \
+            -scheme "$SCHEME" \
             -sdk iphoneos \
             -configuration Release \
             CODE_SIGNING_ALLOWED=NO
     artifacts:
-      - build/ios/ipa/*.ipa
       - $HOME/Library/Developer/Xcode/DerivedData/**/Build/Products/**/*.app
+      - build/ios/ipa/*.ipa
