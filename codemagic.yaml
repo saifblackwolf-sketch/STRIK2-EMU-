@@ -12,8 +12,9 @@ workflows:
           find ./src -name "GSRenderer.cpp" -exec sed -i '' 's/1.333f/1.432f/g' {} +
       - name: Build Emulator
         script: |
-          # Locate and build the Xcode project
-          PROJ=$(find . -name "*.xcodeproj" | head -n 1)
+          # Find the main project while ignoring 3rdparty libraries
+          PROJ=$(find . -name "*.xcodeproj" -not -path "*/3rdparty/*" | head -n 1)
+          echo "Building main project: $PROJ"
           xcodebuild build \
             -project "$PROJ" \
             -scheme "Play" \
