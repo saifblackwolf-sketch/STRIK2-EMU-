@@ -1,0 +1,25 @@
+workflows:
+  m4-ultimate-build:
+    name: STRIK2 M4 Build
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    environment:
+      xcode: latest
+    scripts:
+      - name: M4 Display Patch
+        script: |
+          # Apply 1.432f ratio for iPad Pro M4 screen
+          find ./src -name "GSRenderer.cpp" -exec sed -i '' 's/1.333f/1.432f/g' {} +
+      - name: Build Emulator
+        script: |
+          # Locate and build the Xcode project
+          PROJ=$(find . -name "*.xcodeproj" | head -n 1)
+          xcodebuild build \
+            -project "$PROJ" \
+            -scheme "Play" \
+            -sdk iphoneos \
+            -configuration Release \
+            CODE_SIGNING_ALLOWED=NO
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/Products/**/*.app
