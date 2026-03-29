@@ -1,32 +1,35 @@
 workflows:
   m4-ultimate-build:
-    name: STRIK2 M4 Build
+    name: STRIK2 M4 Auto-Generate Build
     instance_type: mac_mini_m2
     max_build_duration: 60
     environment:
       xcode: latest
+      vars:
+        PROJECT_NAME: "iPSX2" # أو اسم المحاكي اللي تفضله
     scripts:
+      - name: Generate Xcode Project (CMake)
+        script: |
+          # صناعة ملف الـ xcodeproj تلقائياً من ملفات السورس كود
+          mkdir build && cd build
+          cmake .. -G Xcode -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_SYSROOT=iphoneos
+          
       - name: M4 Display Patch
         script: |
-          # تطبيق نسبة 1.432f لشاشة iPad Pro M4
+          # تعديل أبعاد الشاشة لنسبة 1.432f لتناسب الـ iPad Pro M4
           find . -name "GSRenderer.cpp" -exec sed -i '' 's/1.333f/1.432f/g' {} +
-      - name: Build Emulator
+          
+      - name: Build IPA
         script: |
-          # البحث عن ملف المشروع مع استبعاد المكتبات الخارجية
-          PROJ=$(find . -name "*.xcodeproj" -not -path "*/3rdparty/*" | head -n 1)
-          if [ -z "$PROJ" ]; then echo "Error: Project file not found!"; exit 1; fi
-          echo "Building: $PROJ"
-          
-          # استخراج اسم الـ Scheme تلقائياً
-          SCHEME=$(xcodebuild -project "$PROJ" -list | sed -n '/Schemes:/,$p' | sed -n '2p' | tr -d ' ')
-          echo "Detected Scheme: $SCHEME"
-          
+          cd build
+          # البحث عن الملف اللي صنعناه وبناؤه فوراً
+          PROJ=$(find . -name "*.xcodeproj" | head -n 1)
           xcodebuild build \
             -project "$PROJ" \
-            -scheme "$SCHEME" \
+            -scheme "$PROJECT_NAME" \
             -sdk iphoneos \
             -configuration Release \
             CODE_SIGNING_ALLOWED=NO
     artifacts:
-      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/Products/**/*.app
-      - build/ios/ipa/*.ipa
+      - build/**/*.app
+      - build/**/*.ipa
