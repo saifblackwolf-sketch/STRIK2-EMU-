@@ -6,23 +6,24 @@ workflows:
     environment:
       xcode: latest
       vars:
-        PROJECT_NAME: "iPSX2" # أو اسم المحاكي اللي تفضله
+        PROJECT_NAME: "iPSX2"
     scripts:
       - name: Generate Xcode Project (CMake)
         script: |
-          # صناعة ملف الـ xcodeproj تلقائياً من ملفات السورس كود
+          # الدخول للمجلد الصحيح حيث يوجد ملف CMakeLists.txt
+          cd src/cpp
           mkdir build && cd build
           cmake .. -G Xcode -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_SYSROOT=iphoneos
           
       - name: M4 Display Patch
         script: |
-          # تعديل أبعاد الشاشة لنسبة 1.432f لتناسب الـ iPad Pro M4
+          # تطبيق نسبة 1.432f لشاشة iPad Pro M4
           find . -name "GSRenderer.cpp" -exec sed -i '' 's/1.333f/1.432f/g' {} +
           
       - name: Build IPA
         script: |
-          cd build
-          # البحث عن الملف اللي صنعناه وبناؤه فوراً
+          # العودة لمجلد البناء وتشغيل xcodebuild
+          cd src/cpp/build
           PROJ=$(find . -name "*.xcodeproj" | head -n 1)
           xcodebuild build \
             -project "$PROJ" \
@@ -31,5 +32,5 @@ workflows:
             -configuration Release \
             CODE_SIGNING_ALLOWED=NO
     artifacts:
-      - build/**/*.app
-      - build/**/*.ipa
+      - src/cpp/build/**/*.app
+      - src/cpp/build/**/*.ipa
